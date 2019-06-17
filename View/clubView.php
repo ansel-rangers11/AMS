@@ -293,8 +293,12 @@ if ($db_conn) {
             $result = executePlainSQL("select club.clubname, club.contact, club.officeNumber, office.floorNumber from club inner join office on office.officeNumber=club.officeNumber");
             $columnNames = array("Club Name", "Club Contact", "Office Number", "Floor Number");
         } elseif (array_key_exists('memberCount', $_POST)) {
-            $result = executePlainSQL("select clubName, count(*) from memberOf group by clubName");
-            $columnNames = array("Club Name", "Number of Members");
+          $result = executePlainSQL("select club.clubName, count(*)
+                        from club
+                        left join memberOf
+                        on club.clubName = memberOf.clubName
+                        group by club.clubName");
+          $columnNames = array("Club Name", "Number of Members");
         } else {
             $result = executePlainSQL("select * from club");
         }
