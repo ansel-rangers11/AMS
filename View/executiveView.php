@@ -62,7 +62,7 @@
 <?php
 
 $success = True;
-$db_conn = OCILogon("ora_alewczuk", "a41700162",
+$db_conn = OCILogon("ora_ansel", "a15984164", 
                     "dbhost.students.cs.ubc.ca:1522/stu");
 // Take a plain (no bound variables) SQL command and execute it.
 function executePlainSQL($cmdstr) {
