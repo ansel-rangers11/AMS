@@ -1,36 +1,31 @@
 
 
 
-<p><font size="20">AMS Resources Database</p>
+<p><font size="20">AMS Visit and Access Database</p>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
 
 <form method="POST" action="accesses.php">
    <p><input type="submit" value="Initialize" name="reset"></p>
 </form>
 
-<form method="POST" action="accesses.php">
-   <p><input type="text" placeholder="type club name here.." name="clubSearchString" size="18">
-   <input type="submit" value="Search for an club by its club name here" name="clubSearch"></p>
-</form>
-
 <font size="3">WARNING: Deleting a visit is an irreversible action.
 <form method="POST" action="accesses.php">
    <p>
-   <input type="text" placeholder="Enter visit ID" name="clubSearchDelete" size="30">
-   <input type="submit" value="Delete club" name="deleteClub"></p>
+   <input type="text" placeholder="Enter visit ID" name="visitsearchDelete" size="30">
+   <input type="submit" value="Delete visit" name="deleteVisit"></p>
 </form>
 
 <form id="s" method="post" action="accesses.php">
    <select name="updateValue">
-   <option value="clubName">Club Name</option>
-    <option value="description">Club Description</option>
-    <option value="contact">Club Contact</option>
-    <option value="officeNumber">Office Number</option>
+   <option value="visitID">Visit ID</option>
+    <option value="accessDate">Access Date</option>
+    <option value="timeIn">Time In</option>
+    <option value="timeOut">Time Out</option>
   </select>
 <input type="text" placeholder="type new value here.." name="updateValueData" size="18">
-<p><font size="3">Identify the club name of which you want to change the above value for :</p>
-<input type="text" placeholder="type club name here.." name="updateValueDataName" size="18">
-<input type="submit" name="updateValueAction" value="Update">
+<p><font size="3">Identify the visit ID of which you want to change the above value for :</p>
+<input type="text" placeholder="type visit ID here.." name="updateValueDataName" size="18">
+<input type="submit" name="updateValueAction" value="Update Visit">
 
 </form>
 
@@ -42,13 +37,13 @@
 <!-- refreshes page when submitted -->
 
    <p>
-    <input type="text" placeholder="Club Name" name="insClubName" size="18">
-    <input type="text" placeholder="Club Description" name="insDescription" size="18">
-    <input type="text" placeholder="Club Contact" name="insContact" size="18">
-    <input type="text" placeholder="Office Number"name="insOfficeNumber" size="18">
+    <input type="text" placeholder="Visit ID" name="insVisitID" size="18">
+    <input type="date" placeholder="Access Date" name="insAccessDate" size="18">
+    <input type="timestamp" placeholder="Time In" name="insTimeIn" size="18">
+    <input type="timestamp" placeholder="Time Out"name="insTimeOut" size="18">
 <!-- Define two variables to pass values. -->
-<input type="submit" value="Insert Club Data" name="insertsubmit"></p>
-<input type="submit" value="Clear Club Database" name="deleteAll"></p>
+<input type="submit" value="Insert Visit Data" name="insertsubmit"></p>
+<input type="submit" value="Clear Visit Database" name="deleteAll"></p>
 <input type="submit" value="See All Records" name="seeAll">
 </form>
 
@@ -231,9 +226,9 @@ function printTable($resultFromSQL, $namesOfColumnsArray)
 // Connect Oracle...
 if ($db_conn) {
     global $localvarrr;
-    if (array_key_exists('deleteClub', $_POST)) {
-        executePlainSQL("delete from club
-        where clubName like '%" . $_POST['clubSearchDelete'] . "%' ");
+    if (array_key_exists('deleteVisit', $_POST)) {
+        executePlainSQL("delete from visit
+        where visitID like '%" . $_POST['visitSearchDelete'] . "%' ");
         OCICommit($db_conn);
     } elseif (array_key_exists('reset', $_POST)) {
 		// // Drop old table...
@@ -251,22 +246,22 @@ if ($db_conn) {
 			// Get values from the user and insert data into
                 // the table.
 			$tuple = array (
-				        ":bind1" => $_POST['insClubName'],
-                ":bind2" => $_POST['insDescription'],
-                ":bind3" => $_POST['insContact'],
-                ":bind4" => $_POST['insOfficeNumber']
+				        ":bind1" => $_POST['insVisitID'],
+                ":bind2" => $_POST['insAccessDate'],
+                ":bind3" => $_POST['insTimeIn'],
+                ":bind4" => $_POST['insTimeOut']
 
 			);
 			$alltuples = array (
 				$tuple
 			);
-			executeBoundSQL("insert into club values (:bind1, :bind2, :bind3, :bind4)", $alltuples);
+			executeBoundSQL("insert into visit values (:bind1, :bind2, :bind3, :bind4)", $alltuples);
 			OCICommit($db_conn);
 
         }
         else {
             if (array_key_exists('deleteAll', $_POST)) {
-                executePlainSQL("delete from club");
+                executePlainSQL("delete from visit");
                 OCICommit($db_conn);
             }
             else {
@@ -279,26 +274,21 @@ if ($db_conn) {
                     $alltuples = array (
                         $tuple
                     );
-                    executeBoundSQL("update club set " . $_POST['updateValue'] . "='" . $_POST['updateValueData'] ."' where clubName='" . $_POST['updateValueDataName'] . "'", $alltuples);
+                    executeBoundSQL("update visit set " . $_POST['updateValue'] . "='" . $_POST['updateValueData'] ."' where visitID='" . $_POST['updateValueDataName'] . "'", $alltuples);
                     OCICommit($db_conn);
                 }
             }
         }
     }
-    $lol = array_key_exists('clubSearch', $_POST) || array_key_exists('clubMemberList', $_POST);
+    $lol = array_key_exists('clubMemberList', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
         //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
         header("location: accesses.php");
 	} else {
         // Select data...
-        $columnNames = array("Resource Name", "Visit ID");
-        if (array_key_exists('clubSearch', $_POST)) {
-            $eventsearched = $_POST['clubSearchString'];
-            $result = executePlainSQL("select * from club where clubName like '%" . $eventsearched . "%'");
-        } else {
-            $result = executePlainSQL("select * from club");
-        }
+        $columnNames = array("Resource Name", "Visit ID", "Access Date", "Time In", "Time Out");
+        $result = executePlainSQL("select * from accesses join visit on accesses.visitID=visit.visitID");
         printTable($result, $columnNames);
 	}
 
