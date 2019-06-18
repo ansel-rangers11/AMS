@@ -86,7 +86,7 @@
 
 $localvarrr = 3;
 $success = True;
-$db_conn = OCILogon("ora_alewczuk", "a41700162",
+$db_conn = OCILogon("ora_ansel", "a15984164", 
                     "dbhost.students.cs.ubc.ca:1522/stu");
 
 function executePlainSQL($cmdstr) {
