@@ -9,8 +9,13 @@
 </form>
 
 <form method="POST" action="resource.php">
-   <p><input type="text" placeholder="type resource name here.." name="resourceSearchString" size="18">
+   <p><input type="text" placeholder="type resource name here.." name="resourceSearchString" size="30">
    <input type="submit" value="Search for a resource by its resource name here" name="resourceSearch"></p>
+</form>
+
+<form method="POST" action="resource.php">
+   <p><input type="text" placeholder="type location building code (ie. SUB)" name="resourceLoc" size="30">
+   <input type="submit" value="Look at all resources available at location" name="resourceLocSearch"></p>
 </form>
 
 <font size="3">WARNING: Deleting a resource is an irreversible action.
@@ -30,12 +35,12 @@
   </select>
 <input type="text" placeholder="type new value here.." name="updateValueData" size="18">
 <p><font size="3">Identify the resource name of which you want to change the above value for :</p>
-<input type="text" placeholder="type resource name here.." name="updateValueDataName" size="18">
+<input type="text" placeholder="type resource name here.." name="updateValueDataName" size="30">
 <input type="submit" name="Submit" value="updateResource">
 
 </form>
 
-<p><font size="3">Search for a resource with at least the indicated hours of operation :</p>
+<!-- <p><font size="3">Search for a resource with at least the indicated hours of operation :</p>
 <form method="POST" action="resource.php">
     <select name="updateValueHours">
         <option value="5">5</option>
@@ -44,7 +49,7 @@
         <option value="40">40</option>
     </select>
    <p><input type="submit" value="Search" name="resourceHoursSearch"></p>
-</form>
+</form> -->
 
 
 
@@ -300,26 +305,41 @@ if ($db_conn) {
         }
     }
     $lol = array_key_exists('resourceSearch', $_POST) ||
-           array_key_exists('resourceHoursSearch', $_POST);
+           // array_key_exists('resourceHoursSearch', $_POST) ||
+           array_key_exists('resourceLocSearch', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
         //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
         header("location: resource.php");
 	} else {
         // Select data...
+        $columnNames = array("Resource Name", "Resource Description", "Resource Contact", "Hours", "Location ID");
         if (array_key_exists('resourceSearch', $_POST)) {
             $eventsearched = $_POST['resourceSearchString'];
             $result = executePlainSQL("select * from resourcebasedat where resourceName like '%" . $eventsearched . "%'");
-        } elseif (array_key_exists('resourceHoursSearch', $_POST)) {
-            $hoursSearched = $_POST['updateValueHours'];
-            $result = executePlainSQL("select * from resourcebasedat where hours >= " . $hoursSearched . "");
-        } else {
+        }
+        // elseif (array_key_exists('resourceHoursSearch', $_POST)) {
+        //     $hoursSearched = $_POST['updateValueHours'];
+        //     $result = executePlainSQL("select * from resourcebasedat where hours >= " . $hoursSearched . "");
+        // }
+        elseif (array_key_exists('resourceLocSearch', $_POST)) {
+            $locsearched = $_POST['resourceLoc'];
+            $columnNames = array("Resource Name", "Resource Contact", "Hours", "Building Code", "Area Code");
+            $result = executePlainSQL("select r.resourceName, r.contact, r.hours, l.buildingCode, l.areaCode
+                                        from resourcebasedat r, location l
+                                        where r.locationID=l.locationID
+                                        and l.buildingCode like '%" . $locsearched . "%'");
+        }else {
             $result = executePlainSQL("select * from resourcebasedat");
         }
-        $columnNames = array("Resource Name", "Resource Description", "Resource Contact", "Hours", "Location ID");
         printTable($result, $columnNames);
+        // $nestAgg = executePlainSQL("select MAX(AVG(hours) )
+        //                           from resourcebasedat group by locationID");
+        // NESTED AGGREGATE
         $row = oci_fetch_array($nestAgg);
         $shoeRating = $row[0];
+
+        // echo "<br>The maximum average of open hours of operation grouped by locationID: " . $shoeRating . "<br>";
 	}
 
 	//Commit to save changes...
