@@ -5,13 +5,20 @@
 <a href="clubView.php"><font size= "1.5">Click Here to see student's view</a><br/>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
 
-<form method="POST" action="club.php"> 
+<form method="POST" action="club.php">
    <p><input type="submit" value="Initialize" name="reset"></p>
 </form>
 
-<form method="POST" action="club.php"> 
+<form method="POST" action="club.php">
    <p><input type="text" placeholder="type club name here.." name="clubSearchString" size="18">
    <input type="submit" value="Search for an club by its club name here" name="clubSearch"></p>
+</form>
+
+<font size="3">WARNING: Deleting a club is an irreversible action.
+<form method="POST" action="club.php">
+   <p>
+   <input type="text" placeholder="enter the exact club name" name="clubSearchDelete" size="30">
+   <input type="submit" value="Delete club" name="deleteClub"></p>
 </form>
 
 <form id="s" method="post" action="club.php">
@@ -20,7 +27,7 @@
     <option value="description">Club Description</option>
     <option value="contact">Club Contact</option>
     <option value="officeNumber">Office Number</option>
-  </select> 
+  </select>
 <input type="text" placeholder="type new value here.." name="updateValueData" size="18">
 <p><font size="3">Identify the club name of which you want to change the above value for :</p>
 <input type="text" placeholder="type club name here.." name="updateValueDataName" size="18">
@@ -40,14 +47,14 @@
     <input type="text" placeholder="Club Description" name="insDescription" size="18">
     <input type="text" placeholder="Club Contact" name="insContact" size="18">
     <input type="text" placeholder="Office Number"name="insOfficeNumber" size="18">
-<!-- Define two variables to pass values. -->    
+<!-- Define two variables to pass values. -->
 <input type="submit" value="Insert Club Data" name="insertsubmit"></p>
 <input type="submit" value="Clear Club Database" name="deleteAll"></p>
 <input type="submit" value="See All Records" name="seeAll">
 </form>
 
-<!-- Create a form to pass the values.  
-     See below for how to get the values. --> 
+<!-- Create a form to pass the values.
+     See below for how to get the values. -->
 
 
 <html>
@@ -97,10 +104,10 @@
 
 <?php
 
-//See all club listings 
+//See all club listings
 //Search clubs by name, input textbox
 
-/* This tells the system that it's no longer just parsing 
+/* This tells the system that it's no longer just parsing
    HTML; it's now parsing PHP. */
 
 // keep track of errors so it redirects the page only if
@@ -109,20 +116,20 @@
 
 $localvarrr = 3;
 $success = True;
-$db_conn = OCILogon("ora_ansel", "a15984164", 
+$db_conn = OCILogon("ora_ansel", "a15984164",
                     "dbhost.students.cs.ubc.ca:1522/stu");
 
-function executePlainSQL($cmdstr) { 
+function executePlainSQL($cmdstr) {
      // Take a plain (no bound variables) SQL command and execute it.
 	//echo "<br>running ".$cmdstr."<br>";
 	global $db_conn, $success;
-	$statement = OCIParse($db_conn, $cmdstr); 
-     // There is a set of comments at the end of the file that 
+	$statement = OCIParse($db_conn, $cmdstr);
+     // There is a set of comments at the end of the file that
      // describes some of the OCI specific functions and how they work.
 
 	if (!$statement) {
 		echo "<br>Cannot parse this command: " . $cmdstr . "<br>";
-		$e = OCI_Error($db_conn); 
+		$e = OCI_Error($db_conn);
            // For OCIParse errors, pass the connection handle.
 		echo htmlentities($e['message']);
 		$success = False;
@@ -131,7 +138,7 @@ function executePlainSQL($cmdstr) {
 	$r = OCIExecute($statement, OCI_DEFAULT);
 	if (!$r) {
 		echo "<br>Cannot execute this command: " . $cmdstr . "<br>";
-		$e = oci_error($statement); 
+		$e = oci_error($statement);
            // For OCIExecute errors, pass the statement handle.
 		echo htmlentities($e['message']);
 		$success = False;
@@ -176,8 +183,8 @@ function executeBoundSQL($cmdstr, $list) {
 			//echo "<br>".$bind."<br>";
 			OCIBindByName($statement, $bind, $val);
 			unset ($val); // Make sure you do not remove this.
-                              // Otherwise, $val will remain in an 
-                              // array object wrapper which will not 
+                              // Otherwise, $val will remain in an
+                              // array object wrapper which will not
                               // be recognized by Oracle as a proper
                               // datatype.
 		}
@@ -225,7 +232,11 @@ function printTable($resultFromSQL, $namesOfColumnsArray)
 // Connect Oracle...
 if ($db_conn) {
     global $localvarrr;
-	if (array_key_exists('reset', $_POST)) {
+    if (array_key_exists('deleteClub', $_POST)) {
+        executePlainSQL("delete from club
+        where clubName like '%" . $_POST['clubSearchDelete'] . "%' ");
+        OCICommit($db_conn);
+    } elseif (array_key_exists('reset', $_POST)) {
 		// // Drop old table...
 		// echo "<br> dropping table <br>";
 		// executePlainSQL("Drop table club");
@@ -238,14 +249,14 @@ if ($db_conn) {
 	} else {
 		if (array_key_exists('insertsubmit', $_POST)) {
             $localvarrr = 6;
-			// Get values from the user and insert data into 
+			// Get values from the user and insert data into
                 // the table.
 			$tuple = array (
-				":bind1" => $_POST['insClubName'],
+				        ":bind1" => $_POST['insClubName'],
                 ":bind2" => $_POST['insDescription'],
                 ":bind3" => $_POST['insContact'],
                 ":bind4" => $_POST['insOfficeNumber']
-                
+
 			);
 			$alltuples = array (
 				$tuple
@@ -258,7 +269,7 @@ if ($db_conn) {
             if (array_key_exists('deleteAll', $_POST)) {
                 executePlainSQL("delete from club");
                 OCICommit($db_conn);
-            } 
+            }
             else {
                 if (array_key_exists('updateValueAction', $_POST) || array_key_exists('updateValue', $_POST)) {
                     $tuple = array (
@@ -269,11 +280,11 @@ if ($db_conn) {
                     $alltuples = array (
                         $tuple
                     );
-                    executeBoundSQL("update club set " . $_POST['updateValue'] . "=:bind1 where clubName=:bind3 ", $alltuples);
+                    executeBoundSQL("update club set " . $_POST['updateValue'] . "='" . $_POST['updateValueData'] ."' where clubName='" . $_POST['updateValueDataName'] . "'", $alltuples);
                     OCICommit($db_conn);
                 }
             }
-        } 
+        }
     }
     $lol = array_key_exists('clubSearch', $_POST);
     $lol = !$lol;
@@ -301,5 +312,3 @@ if ($db_conn) {
 	$e = OCI_Error(); // For OCILogon errors pass no handle
 	echo htmlentities($e['message']);
 }
-
-
