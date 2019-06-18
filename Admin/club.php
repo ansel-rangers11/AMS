@@ -14,6 +14,10 @@
    <input type="submit" value="Search for an club by its club name here" name="clubSearch"></p>
 </form>
 
+<form method="POST" action="club.php">
+   <p><input type="submit" value="View Club Members" name="clubMemberList"></p>
+</form>
+
 <font size="3">WARNING: Deleting a club is an irreversible action.
 <form method="POST" action="club.php">
    <p>
@@ -286,20 +290,26 @@ if ($db_conn) {
             }
         }
     }
-    $lol = array_key_exists('clubSearch', $_POST);
+    $lol = array_key_exists('clubSearch', $_POST) || array_key_exists('clubMemberList', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
         //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
         header("location: club.php");
 	} else {
         // Select data...
+        $columnNames = array("Club Name", "Club Description", "Club Contact", "Office Number");
         if (array_key_exists('clubSearch', $_POST)) {
             $eventsearched = $_POST['clubSearchString'];
             $result = executePlainSQL("select * from club where clubName like '%" . $eventsearched . "%'");
-        } else {
+        } elseif (array_key_exists('clubMemberList', $_POST)) {
+          $result= executePlainSQL("select c.clubname, m.studentID
+                                    from club c
+                                    left join memberOf m
+                                    on c.clubName=m.clubName");
+          $columnNames = array("Club Name", "studentID");
+        }else {
             $result = executePlainSQL("select * from club");
         }
-        $columnNames = array("Club Name", "Club Description", "Club Contact", "Office Number");
         printTable($result, $columnNames);
 	}
 
