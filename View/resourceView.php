@@ -3,13 +3,17 @@
 <a href="resource.php"><font size= "1.5">Click Here to Enable Admin View (ADMINS ONLY!)</a><br/>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
 
-<form method="POST" action="resourceView.php"> 
+<form method="POST" action="resourceView.php">
    <p><input type="submit" value="Initialize" name="reset"></p>
 </form>
 
 <form method="POST" action="resourceView.php"> 
    <p><input type="text" placeholder="type resource name here.." name="resourceSearchString" size="18">
    <input type="submit" value="Search for a resource by its resource name here" name="resourceSearch"></p>
+</form>
+
+<form method="POST" action="resourceView.php">
+    <input type="submit" value="See location information of the resources" name="joinResource">
 </form>
 
 <form id="s" method="post" action="resourceView.php">
@@ -19,7 +23,7 @@
     <option value="contact">Resource Contact</option>
     <option value="hours">Hours</option>
     <option value="locationID">Location ID</option>
-  </select> 
+  </select>
 <input type="text" placeholder="type new value here.." name="updateValueData" size="18">
 <p><font size="3">Identify the resource name of which you want to change the above value for :</p>
 <input type="text" placeholder="type resource name here.." name="updateValueDataName" size="18">
@@ -28,20 +32,20 @@
 </form>
 
 <p><font size="3">Search for a resource with at least the indicated hours of operation :</p>
-<form method="POST" action="resourceView.php"> 
+<form method="POST" action="resourceView.php">
     <select name="updateValueHours">
         <option value="5">5</option>
         <option value="10">10</option>
         <option value="20">20</option>
         <option value="40">40</option>
-    </select> 
+    </select>
    <p><input type="submit" value="Search" name="resourceHoursSearch"></p>
    <input type="submit" value="See All Records" name="seeAll">
 </form>
 
 
-<!-- Create a form to pass the values.  
-     See below for how to get the values. --> 
+<!-- Create a form to pass the values.
+     See below for how to get the values. -->
 
 
 <html>
@@ -91,10 +95,10 @@
 
 <?php
 
-//See all resource listings 
+//See all resource listings
 //Search resources by name, input textbox
 
-/* This tells the system that it's no longer just parsing 
+/* This tells the system that it's no longer just parsing
    HTML; it's now parsing PHP. */
 
 // keep track of errors so it redirects the page only if
@@ -103,20 +107,20 @@
 
 $localvarrr = 3;
 $success = True;
-$db_conn = OCILogon("ora_ansel", "a15984164", 
+$db_conn = OCILogon("ora_ansel", "a15984164",
                     "dbhost.students.cs.ubc.ca:1522/stu");
 
-function executePlainSQL($cmdstr) { 
+function executePlainSQL($cmdstr) {
      // Take a plain (no bound variables) SQL command and execute it.
 	//echo "<br>running ".$cmdstr."<br>";
 	global $db_conn, $success;
-	$statement = OCIParse($db_conn, $cmdstr); 
-     // There is a set of comments at the end of the file that 
+	$statement = OCIParse($db_conn, $cmdstr);
+     // There is a set of comments at the end of the file that
      // describes some of the OCI specific functions and how they work.
 
 	if (!$statement) {
 		echo "<br>Cannot parse this command: " . $cmdstr . "<br>";
-		$e = OCI_Error($db_conn); 
+		$e = OCI_Error($db_conn);
            // For OCIParse errors, pass the connection handle.
 		echo htmlentities($e['message']);
 		$success = False;
@@ -125,7 +129,7 @@ function executePlainSQL($cmdstr) {
 	$r = OCIExecute($statement, OCI_DEFAULT);
 	if (!$r) {
 		echo "<br>Cannot execute this command: " . $cmdstr . "<br>";
-		$e = oci_error($statement); 
+		$e = oci_error($statement);
            // For OCIExecute errors, pass the statement handle.
 		echo htmlentities($e['message']);
 		$success = False;
@@ -170,8 +174,8 @@ function executeBoundSQL($cmdstr, $list) {
 			//echo "<br>".$bind."<br>";
 			OCIBindByName($statement, $bind, $val);
 			unset ($val); // Make sure you do not remove this.
-                              // Otherwise, $val will remain in an 
-                              // array object wrapper which will not 
+                              // Otherwise, $val will remain in an
+                              // array object wrapper which will not
                               // be recognized by Oracle as a proper
                               // datatype.
 		}
@@ -243,23 +247,30 @@ if ($db_conn) {
             OCICommit($db_conn);
         }
     }
-    $lol = array_key_exists('resourceSearch', $_POST) || array_key_exists('resourceHoursSearch', $_POST);
+    $lol = array_key_exists('resourceSearch', $_POST) ||
+           array_key_exists('resourceHoursSearch', $_POST) ||
+           array_key_exists('joinResource', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
         //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
         header("location: resourceView.php");
 	} else {
         // Select data...
+        $columnNames = array("Resource Name", "Resource Description", "Resource Contact", "Hours");
         if (array_key_exists('resourceSearch', $_POST)) {
             $eventsearched = $_POST['resourceSearchString'];
             $result = executePlainSQL("select * from resourcebasedat where resourceName like '%" . $eventsearched . "%'");
         } elseif (array_key_exists('resourceHoursSearch', $_POST)) {
             $hoursSearched = $_POST['updateValueHours'];
             $result = executePlainSQL("select * from resourcebasedat where hours >= " . $hoursSearched . "");
-        } else {
+        } elseif (array_key_exists('joinResource', $_POST)) {
+            $columnNames = array("Resource Name", "Resource Contact", "Hours", "Building Code", "Area Code");
+            $result = executePlainSQL('select r.resourceName, r.contact, r.hours, l.buildingCode, l.areaCode
+                                      from resourcebasedat r, location l
+                                      where r.locationID=l.locationID');
+        }else {
             $result = executePlainSQL("select * from resourcebasedat");
         }
-        $columnNames = array("Resource Name", "Resource Description", "Resource Contact", "Hours", "Location ID");
         printTable($result, $columnNames);
 	}
 
@@ -272,5 +283,3 @@ if ($db_conn) {
 	$e = OCI_Error(); // For OCILogon errors pass no handle
 	echo htmlentities($e['message']);
 }
-
-
