@@ -29,6 +29,8 @@
 <input type="text" placeholder="type resource name here.." name="updateValueDataName" size="18">
 <input type="submit" value="Update" name="updateValueAction" >
 
+<p><input type="submit" value="See All Records" name="seeAll">
+
 <!-- Create a form to pass the values.
      See below for how to get the values. -->
 
