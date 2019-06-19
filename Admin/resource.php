@@ -2,6 +2,7 @@
 
 <p><font size="20">AMS Resource Database</p>
 <a href="resourceView.php"><font size= "1.5">Click Here to see student's view</a><br/>
+<a href="accesses.php"><font size= "1.5">Look at visit and accesses information</a>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
 
 <form method="POST" action="resource.php">
