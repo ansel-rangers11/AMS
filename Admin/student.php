@@ -1,18 +1,15 @@
 <p><font size="20">Student Database</p>
 
-<form method="POST" action="studentView.php">
-   <p><input type="submit" value="Initialize" name="reset"></p>
+<form method="POST" action="student.php">
+   <p><input type="submit" value="Show students in EVERY club" name="division"></p>
 </form>
 
-<form method="POST" action="studentView.php">
+<form method="POST" action="student.php">
    <p><input type="text" placeholder="StudentID" name="insStudentID1" size="8"><input type="submit" value="Please identify with your StudentID" name="identification"></p>
 </form>
 
-<a href="student.php"><font size= "3">Click Here to Enable Admin View (ADMINS ONLY!)</a><br/>
+<a href="studentView.php"><font size= "3">Click Here to see student's view</a><br/>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
-
-<!-- Create a form to pass the values.
-     See below for how to get the values. -->
 
 <p><font size="3"> Update address by inserting your studentID and the desired new address below: </p>
 <p><font size="2"> Student ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -21,7 +18,7 @@
                    New Postal Code&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </font></p>
 
-<form method="POST" action="studentView.php">
+<form method="POST" action="student.php">
 <!-- refreshes page when submitted -->
 
    <p><input type="text" name="studentID" size="6">
@@ -73,8 +70,6 @@
 </style>
 </html>
 
-
-
 <?php
 
 /* This tells the system that it's no longer just parsing
@@ -84,9 +79,8 @@
 // there are no errors
 
 
-$localvarrr = 3;
 $success = True;
-$db_conn = OCILogon("ora_ansel", "a15984164", 
+$db_conn = OCILogon("ora_ansel", "a15984164",
                     "dbhost.students.cs.ubc.ca:1522/stu");
 
 function executePlainSQL($cmdstr) {
@@ -200,7 +194,6 @@ function printTable($resultFromSQL, $namesOfColumnsArray)
 
 // Connect Oracle...
 if ($db_conn) {
-    global $localvarrr;
 			if (array_key_exists('updatesubmit', $_POST)) {
 				// Update tuple using data from user
                 if ($_POST['newAddress'])
@@ -210,38 +203,33 @@ if ($db_conn) {
                 if ($_POST['newPostalCode'])
                 executePlainSQL("update student set postalCode = '" . $_POST['newPostalCode'] . "' where studentID = '" . $_POST['studentID'] . "'");
 				OCICommit($db_conn);
-                }
-
-
-    $lol = array_key_exists('identification', $_POST);
-    $lol = !$lol;
-	if ($_POST && $success && $lol) {
-        //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
-        header("location: studentView.php");
-	} else {
+} else {
+      if (array_key_exists('division', $_POST)){
+      // Show clubs selected student is a member of
+      $result3 = executePlainSQL("SELECT DISTINCT studentID FROM memberOf WHERE studentID not in (SELECT studentID FROM ((SELECT studentID, clubName FROM (select clubName from club) cross join (select distinct studentID from memberOf)) MINUS (SELECT studentID, clubName FROM memberOf)))");
+      $columnNames3 = array("Student IDs of Students in EVERY Club");
+      printTable($result3, $columnNames3);
+}
+  else {
         // Select data...
         if (array_key_exists('identification', $_POST)) {
             $idsearched = $_POST['insStudentID1'];
             $result = executePlainSQL("select student.studentID, student.name, student.major, student.address, student.postalCode, postalCode.city, postalCode.province from student, postalCode where studentID='" . $idsearched . "'AND student.postalCode=postalCode.postalCode");
             $columnNames = array("StudentID", "Student Name", "Major", "Address", "Postal Code", "City", "Province");
             printTable($result, $columnNames);
-        }
-	}
 
-  // Show clubs selected student is a member of
-  $result2 = executePlainSQL("select clubName from memberOf where studentID = '" . $idsearched . "'");
-  $columnNames2 = array("Clubs You Are a Member Of");
-  printTable($result2, $columnNames2);
+            // Show clubs selected student is a member of
+            $result2 = executePlainSQL("select clubName from memberOf where studentID = '" . $idsearched . "'");
+            $columnNames2 = array("Clubs You Are a Member Of");
+            printTable($result2, $columnNames2);
+         }
+}
+}
 
   // Show total number of registered students
   $result1 = executePlainSQL("select COUNT(*) from STUDENT");
   $columnNames1 = array("Total Number of Registered Students");
   printTable($result1, $columnNames1);
-
-  // Show clubs selected student is a member of
-  $result3 = executePlainSQL("SELECT DISTINCT studentID FROM memberOf WHERE studentID not in (SELECT studentID FROM ((SELECT studentID, clubName FROM (select clubName from club) cross join (select distinct studentID from memberOf)) MINUS (SELECT studentID, clubName FROM memberOf)))");
-  $columnNames3 = array("Student IDs of Students in EVERY Club");
-  printTable($result3, $columnNames3);
 
   	//Commit to save changes...
   OCILogoff($db_conn);
