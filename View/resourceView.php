@@ -7,7 +7,7 @@
    <p><input type="submit" value="Initialize" name="reset"></p>
 </form>
 
-<form method="POST" action="resourceView.php"> 
+<form method="POST" action="resourceView.php">
    <p><input type="text" placeholder="type resource name here.." name="resourceSearchString" size="18">
    <input type="submit" value="Search for a resource by its resource name here" name="resourceSearch"></p>
 </form>
@@ -28,21 +28,6 @@
 <p><font size="3">Identify the resource name of which you want to change the above value for :</p>
 <input type="text" placeholder="type resource name here.." name="updateValueDataName" size="18">
 <input type="submit" value="Update" name="updateValueAction" >
-
-</form>
-
-<p><font size="3">Search for a resource with at least the indicated hours of operation :</p>
-<form method="POST" action="resourceView.php">
-    <select name="updateValueHours">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="40">40</option>
-    </select>
-   <p><input type="submit" value="Search" name="resourceHoursSearch"></p>
-   <input type="submit" value="See All Records" name="seeAll">
-</form>
-
 
 <!-- Create a form to pass the values.
      See below for how to get the values. -->
@@ -248,7 +233,6 @@ if ($db_conn) {
         }
     }
     $lol = array_key_exists('resourceSearch', $_POST) ||
-           array_key_exists('resourceHoursSearch', $_POST) ||
            array_key_exists('joinResource', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
@@ -260,9 +244,6 @@ if ($db_conn) {
         if (array_key_exists('resourceSearch', $_POST)) {
             $eventsearched = $_POST['resourceSearchString'];
             $result = executePlainSQL("select * from resourcebasedat where resourceName like '%" . $eventsearched . "%'");
-        } elseif (array_key_exists('resourceHoursSearch', $_POST)) {
-            $hoursSearched = $_POST['updateValueHours'];
-            $result = executePlainSQL("select * from resourcebasedat where hours >= " . $hoursSearched . "");
         } elseif (array_key_exists('joinResource', $_POST)) {
             $columnNames = array("Resource Name", "Resource Contact", "Hours", "Building Code", "Area Code");
             $result = executePlainSQL('select r.resourceName, r.contact, r.hours, l.buildingCode, l.areaCode
