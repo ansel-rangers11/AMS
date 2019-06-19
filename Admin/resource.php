@@ -306,7 +306,7 @@ if ($db_conn) {
         }
     }
     $lol = array_key_exists('resourceSearch', $_POST) ||
-           // array_key_exists('resourceHoursSearch', $_POST) ||
+           array_key_exists('resourceLocSearch', $_POST) ||
            array_key_exists('resourceLocSearch', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
