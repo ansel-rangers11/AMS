@@ -1,48 +1,51 @@
 
-<p><font size="20">AMS Resource Database</p>
-<a href="resource.php"><font size= "1.5">Click Here to Enable Admin View (ADMINS ONLY!)</a><br/>
+
+
+<p><font size="20">AMS Visit and Access Database</p>
 <a href="main.php"><font size= "1.5">Back to Main Menu</a>
 
-<form method="POST" action="resourceView.php">
+<form method="POST" action="accesses.php">
    <p><input type="submit" value="Initialize" name="reset"></p>
 </form>
 
-<form method="POST" action="resourceView.php"> 
-   <p><input type="text" placeholder="type resource name here.." name="resourceSearchString" size="18">
-   <input type="submit" value="Search for a resource by its resource name here" name="resourceSearch"></p>
+<font size="3">WARNING: Deleting a visit is an irreversible action.
+<form method="POST" action="accesses.php">
+   <p>
+   <input type="text" placeholder="Enter visit ID" name="visitsearchDelete" size="30">
+   <input type="submit" value="Delete visit" name="deleteVisit"></p>
 </form>
 
-<form method="POST" action="resourceView.php">
-    <input type="submit" value="See location information of the resources" name="joinResource">
-</form>
-
-<form id="s" method="post" action="resourceView.php">
+<form id="s" method="post" action="accesses.php">
    <select name="updateValue">
-   <option value="resourceName">Resource Name</option>
-    <option value="description">Resource Description</option>
-    <option value="contact">Resource Contact</option>
-    <option value="hours">Hours</option>
-    <option value="locationID">Location ID</option>
+   <option value="visitID">Visit ID</option>
+    <option value="accessDate">Access Date</option>
+    <option value="timeIn">Time In</option>
+    <option value="timeOut">Time Out</option>
   </select>
 <input type="text" placeholder="type new value here.." name="updateValueData" size="18">
-<p><font size="3">Identify the resource name of which you want to change the above value for :</p>
-<input type="text" placeholder="type resource name here.." name="updateValueDataName" size="18">
-<input type="submit" value="Update" name="updateValueAction" >
+<p><font size="3">Identify the visit ID of which you want to change the above value for :</p>
+<input type="text" placeholder="type visit ID here.." name="updateValueDataName" size="18">
+<input type="submit" name="updateValueAction" value="Update Visit">
 
 </form>
 
-<p><font size="3">Search for a resource with at least the indicated hours of operation :</p>
-<form method="POST" action="resourceView.php">
-    <select name="updateValueHours">
-        <option value="5">5</option>
-        <option value="10">10</option>
-        <option value="20">20</option>
-        <option value="40">40</option>
-    </select>
-   <p><input type="submit" value="Search" name="resourceHoursSearch"></p>
-   <input type="submit" value="See All Records" name="seeAll">
-</form>
 
+
+<p><font size="3">Insert a new club info into our Club database table below:</p>
+
+<form method="POST" action="accesses.php">
+<!-- refreshes page when submitted -->
+
+   <p>
+    <input type="text" placeholder="Visit ID" name="insVisitID" size="18">
+    <input type="date" placeholder="Access Date" name="insAccessDate" size="18">
+    <input type="timestamp" placeholder="Time In" name="insTimeIn" size="18">
+    <input type="timestamp" placeholder="Time Out"name="insTimeOut" size="18">
+<!-- Define two variables to pass values. -->
+<input type="submit" value="Insert Visit Data" name="insertsubmit"></p>
+<input type="submit" value="Clear Visit Database" name="deleteAll"></p>
+<input type="submit" value="See All Records" name="seeAll">
+</form>
 
 <!-- Create a form to pass the values.
      See below for how to get the values. -->
@@ -95,8 +98,8 @@
 
 <?php
 
-//See all resource listings
-//Search resources by name, input textbox
+//See all club listings
+//Search clubs by name, input textbox
 
 /* This tells the system that it's no longer just parsing
    HTML; it's now parsing PHP. */
@@ -223,54 +226,69 @@ function printTable($resultFromSQL, $namesOfColumnsArray)
 // Connect Oracle...
 if ($db_conn) {
     global $localvarrr;
-	if (array_key_exists('reset', $_POST)) {
-		// Drop old table...
+    if (array_key_exists('deleteVisit', $_POST)) {
+        executePlainSQL("delete from visit
+        where visitID like '%" . $_POST['visitSearchDelete'] . "%' ");
+        OCICommit($db_conn);
+    } elseif (array_key_exists('reset', $_POST)) {
+		// // Drop old table...
 		// echo "<br> dropping table <br>";
-		// executePlainSQL("Drop table resourcebasedat");
+		// executePlainSQL("Drop table club");
 
 		// // Create new table...
 		// echo "<br> creating new table <br>";
-		// executePlainSQL("create table resourcebasedat (resourceName varchar2(30), description varchar2(30), contact varchar2(30), hours varchar2(8), locationID varchar2(30), primary key (resourceName))");
+		// executePlainSQL("create table club (clubName varchar2(30), description varchar2(30), contact varchar2(30), officeNumber varchar(8), primary key (clubName))");
         // OCICommit($db_conn);
 
 	} else {
-        if (array_key_exists('updateValueAction', $_POST) || array_key_exists('updateValue', $_POST)) {
-            $tuple = array (
-                ":bind1" => $_POST['updateValueData'],
-                ":bind2" => $_POST['updateValue'],
-                ":bind3" => $_POST['updateValueDataName']
-            );
-            $alltuples = array (
-                $tuple
-            );
-            executeBoundSQL("update resourcebasedat set " . $_POST['updateValue'] . "=:bind1 where resourceName=:bind3 ", $alltuples);
-            OCICommit($db_conn);
+		if (array_key_exists('insertsubmit', $_POST)) {
+            $localvarrr = 6;
+			// Get values from the user and insert data into
+                // the table.
+			$tuple = array (
+				        ":bind1" => $_POST['insVisitID'],
+                ":bind2" => $_POST['insAccessDate'],
+                ":bind3" => $_POST['insTimeIn'],
+                ":bind4" => $_POST['insTimeOut']
+
+			);
+			$alltuples = array (
+				$tuple
+			);
+			executeBoundSQL("insert into visit values (:bind1, :bind2, :bind3, :bind4)", $alltuples);
+			OCICommit($db_conn);
+
+        }
+        else {
+            if (array_key_exists('deleteAll', $_POST)) {
+                executePlainSQL("delete from visit");
+                OCICommit($db_conn);
+            }
+            else {
+                if (array_key_exists('updateValueAction', $_POST) || array_key_exists('updateValue', $_POST)) {
+                    $tuple = array (
+                        ":bind1" => $_POST['updateValueData'],
+                        ":bind2" => $_POST['updateValue'],
+                        ":bind3" => $_POST['updateValueDataName']
+                    );
+                    $alltuples = array (
+                        $tuple
+                    );
+                    executeBoundSQL("update visit set " . $_POST['updateValue'] . "='" . $_POST['updateValueData'] ."' where visitID='" . $_POST['updateValueDataName'] . "'", $alltuples);
+                    OCICommit($db_conn);
+                }
+            }
         }
     }
-    $lol = array_key_exists('resourceSearch', $_POST) ||
-           array_key_exists('resourceHoursSearch', $_POST) ||
-           array_key_exists('joinResource', $_POST);
+    $lol = array_key_exists('clubMemberList', $_POST);
     $lol = !$lol;
 	if ($_POST && $success && $lol) {
         //POST-REDIRECT-GET -- See http://en.wikipedia.org/wiki/Post/Redirect/Get
-        header("location: resourceView.php");
+        header("location: accesses.php");
 	} else {
         // Select data...
-        $columnNames = array("Resource Name", "Resource Description", "Resource Contact", "Hours");
-        if (array_key_exists('resourceSearch', $_POST)) {
-            $eventsearched = $_POST['resourceSearchString'];
-            $result = executePlainSQL("select * from resourcebasedat where resourceName like '%" . $eventsearched . "%'");
-        } elseif (array_key_exists('resourceHoursSearch', $_POST)) {
-            $hoursSearched = $_POST['updateValueHours'];
-            $result = executePlainSQL("select * from resourcebasedat where hours >= " . $hoursSearched . "");
-        } elseif (array_key_exists('joinResource', $_POST)) {
-            $columnNames = array("Resource Name", "Resource Contact", "Hours", "Building Code", "Area Code");
-            $result = executePlainSQL('select r.resourceName, r.contact, r.hours, l.buildingCode, l.areaCode
-                                      from resourcebasedat r, location l
-                                      where r.locationID=l.locationID');
-        }else {
-            $result = executePlainSQL("select * from resourcebasedat");
-        }
+        $columnNames = array("Resource Name", "Visit ID", "Access Date", "Time In", "Time Out");
+        $result = executePlainSQL("select * from accesses join visit on accesses.visitID=visit.visitID");
         printTable($result, $columnNames);
 	}
 
